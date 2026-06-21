@@ -1,0 +1,1 @@
+export { MovieQuickViewModal } from './MovieQuickViewModal';
