@@ -2,6 +2,23 @@ import { useNavigate } from 'react-router-dom';
 import { useFavorites } from '../../hooks/useFavorites';
 import type { Movie } from '../../api/types';
 
+const TicketIcon = () => (
+  <svg
+    width="14"
+    height="14"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+    <path d="M16 3v4M8 3v4M3 11h18" />
+  </svg>
+);
+
 interface MovieCardProps {
   movie: Movie;
   variant?: 'grid' | 'list';
@@ -63,6 +80,11 @@ export function MovieCard({ movie, variant = 'grid' }: MovieCardProps) {
     toggleFavorite(movie.id, 'movie');
   };
 
+  const handleShowtimesClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigate(`/showtimes?search=${encodeURIComponent(movie.title)}`);
+  };
+
   const duration = formatDuration(movie.duration);
   const genres = (movie.genres || [])
     .map((g) => g.name)
@@ -114,6 +136,16 @@ export function MovieCard({ movie, variant = 'grid' }: MovieCardProps) {
         </div>
 
         {genres && <p className="movie-card__genres">{genres}</p>}
+
+        <button
+          type="button"
+          className="movie-card__showtimes"
+          onClick={handleShowtimesClick}
+          aria-label={`Vorstellungen für ${movie.title}`}
+        >
+          <TicketIcon />
+          Vorstellungen
+        </button>
 
         {typeof movie.imdbRating === 'number' && (
           <div className="movie-card__imdb">

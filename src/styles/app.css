@@ -950,6 +950,35 @@ body:has(.mobile-drawer.is-open) {
   color: var(--accent);
 }
 
+.movie-card__showtimes {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: auto;
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--accent);
+  background: transparent;
+  color: var(--accent);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition);
+  pointer-events: auto;
+}
+
+.movie-card__showtimes:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
+.movie-card__showtimes:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
+}
+
 .movie-card__rating-badge {
   position: absolute;
   top: 10px;
