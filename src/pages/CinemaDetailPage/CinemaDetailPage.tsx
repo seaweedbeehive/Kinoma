@@ -55,6 +55,15 @@ function formatDateKey(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
+function getShowDateKey(show: Show): string | null {
+  if (!show.beginning?.timestamp) return null;
+  return formatDateKey(new Date(show.beginning.timestamp * 1000));
+}
+
+function filterShowsByDate(shows: Show[], selectedDate: string): Show[] {
+  return shows.filter((show) => getShowDateKey(show) === selectedDate);
+}
+
 function formatTime(timestamp?: number): string {
   if (!timestamp) return '--:--';
   const date = new Date(timestamp * 1000);
@@ -231,8 +240,10 @@ export function CinemaDetailPage() {
 
   const filteredShows = useMemo(() => {
     if (!shows) return [];
-    return shows.filter((show) => showMatchesFilters(show, filters));
-  }, [shows, filters]);
+    return filterShowsByDate(shows, selectedDate).filter((show) =>
+      showMatchesFilters(show, filters)
+    );
+  }, [shows, selectedDate, filters]);
 
   const sortedShows = useMemo(
     () => sortShows(filteredShows, sortBy),

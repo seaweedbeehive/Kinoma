@@ -45,6 +45,15 @@ function formatDateKey(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
+function getShowDateKey(show: Show): string | null {
+  if (!show.beginning?.timestamp) return null;
+  return formatDateKey(new Date(show.beginning.timestamp * 1000));
+}
+
+function filterShowsByDate(shows: Show[], selectedDate: string): Show[] {
+  return shows.filter((show) => getShowDateKey(show) === selectedDate);
+}
+
 function formatDuration(minutes?: number): string | null {
   if (!minutes || minutes <= 0) return null;
   const h = Math.floor(minutes / 60);
@@ -147,13 +156,16 @@ export function MovieQuickViewModal({
     return cinemas
       .map((cinema, index) => {
         const result = showQueries[index];
-        const shows = (result.data || []).filter((show) =>
-          showMatchesLanguage(show, activeLanguages)
+        const shows = filterShowsByDate(
+          (result.data || []).filter((show) =>
+            showMatchesLanguage(show, activeLanguages)
+          ),
+          selectedDate
         );
         return { cinema, shows };
       })
       .filter((entry) => entry.shows.length > 0);
-  }, [cinemas, showQueries, activeLanguages]);
+  }, [cinemas, showQueries, activeLanguages, selectedDate]);
 
   const toggleLanguage = (lang: string) => {
     const normalized = lang.toUpperCase();
