@@ -4,14 +4,23 @@ import { MovieCard } from '../../components/MovieCard';
 import { MovieCardSkeleton } from '../../components/Skeleton';
 import { ErrorState } from '../../components/ErrorState';
 import { ViewToggle } from '../../components/ViewToggle';
-import { FilterPanel } from '../../components/FilterPanel';
+import { FilterBar } from '../../components/FilterBar';
 import { useMovies } from '../../hooks/useMovies';
+import { useMoviePopularity } from '../../hooks/useMoviePopularity';
 import { useFilterState } from '../../hooks/useFilterState';
+import { hasTmdbKey, normalize, titleKey } from '../../api/tmdb';
 import type { Movie } from '../../api/types';
+import type { MoviePopularity } from '../../hooks/useMoviePopularity';
 
-type MovieSortOption = 'rating' | 'title' | 'duration' | 'soonest';
+type MovieSortOption = 'rating' | 'title' | 'duration' | 'soonest' | 'trending';
 
-const MOVIE_SORT_OPTIONS: MovieSortOption[] = ['rating', 'title', 'duration', 'soonest'];
+const MOVIE_SORT_OPTIONS: MovieSortOption[] = [
+  'rating',
+  'title',
+  'duration',
+  'soonest',
+  'trending',
+];
 
 function isMovieSortOption(value: string): value is MovieSortOption {
   return MOVIE_SORT_OPTIONS.includes(value as MovieSortOption);
@@ -28,14 +37,11 @@ function useDebounce<T>(value: T, delay: number): T {
   return debounced;
 }
 
-function normalize(str: string): string {
-  return str
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '');
-}
-
-function sortMovies(movies: Movie[], sortBy: MovieSortOption): Movie[] {
+function sortMovies(
+  movies: Movie[],
+  sortBy: MovieSortOption,
+  popularityMap: Map<string, MoviePopularity>
+): Movie[] {
   const sorted = [...movies];
   switch (sortBy) {
     case 'rating':
@@ -60,6 +66,17 @@ function sortMovies(movies: Movie[], sortBy: MovieSortOption): Movie[] {
           Number(b.productionYear || 0) - Number(a.productionYear || 0) ||
           a.title.localeCompare(b.title)
       );
+      break;
+    case 'trending':
+      sorted.sort((a, b) => {
+        const aPop = popularityMap.get(titleKey(a.title))?.popularity ?? 0;
+        const bPop = popularityMap.get(titleKey(b.title))?.popularity ?? 0;
+        return (
+          bPop - aPop ||
+          (b.imdbRating || 0) - (a.imdbRating || 0) ||
+          a.title.localeCompare(b.title)
+        );
+      });
       break;
   }
   return sorted;
@@ -94,9 +111,16 @@ function filterMovies(
 }
 
 export function MoviesPage() {
-  const { setSidebar, openMobileFilter, closeMobileFilter } = useLayout();
+  const { setSidebar } = useLayout();
   const { data: movies, isLoading, error } = useMovies();
   const { filters, setPartial, resetFilters, activeFilterCount } = useFilterState();
+
+  const filtered = useMemo(() => {
+    if (!movies) return [];
+    return filterMovies(movies, filters.search, filters.selectedGenres);
+  }, [movies, filters.search, filters.selectedGenres]);
+
+  const popularityMap = useMoviePopularity(filtered);
 
   const [searchInput, setSearchInput] = useState(filters.search);
   const debouncedSearch = useDebounce(searchInput, 300);
@@ -106,30 +130,18 @@ export function MoviesPage() {
   }, [debouncedSearch, setPartial]);
 
   useEffect(() => {
-    setSidebar(
-      <FilterPanel
-        mode="movies"
-        filters={filters}
-        onChange={setPartial}
-        onApply={closeMobileFilter}
-        onReset={resetFilters}
-      />
-    );
-    return () => setSidebar(null);
-  }, [setSidebar, filters, setPartial, closeMobileFilter, resetFilters]);
+    setSidebar(null);
+  }, [setSidebar]);
 
-  const filtered = useMemo(() => {
-    if (!movies) return [];
-    return filterMovies(movies, filters.search, filters.selectedGenres);
-  }, [movies, filters.search, filters.selectedGenres]);
+  const DEFAULT_MOVIE_SORT_BY: MovieSortOption = hasTmdbKey() ? 'trending' : 'rating';
 
   const movieSortBy = isMovieSortOption(filters.sortBy)
     ? filters.sortBy
-    : 'rating';
+    : DEFAULT_MOVIE_SORT_BY;
 
   const sorted = useMemo(
-    () => sortMovies(filtered, movieSortBy),
-    [filtered, movieSortBy]
+    () => sortMovies(filtered, movieSortBy, popularityMap),
+    [filtered, movieSortBy, popularityMap]
   );
 
   if (isLoading) {
@@ -182,24 +194,22 @@ export function MoviesPage() {
             <option value="title">Titel: A → Z</option>
             <option value="duration">Dauer: Kurz → Lang</option>
             <option value="soonest">Als Nächstes</option>
+            <option value="trending">Beliebtheit (TMDB)</option>
           </select>
           <ViewToggle
             value={filters.viewMode}
             onChange={(view) => setPartial({ viewMode: view })}
           />
-          <button
-            type="button"
-            className="filter-toggle filter-toggle--inline"
-            onClick={openMobileFilter}
-            aria-label="Filter öffnen"
-          >
-            Filter
-            {activeFilterCount > 0 && (
-              <span className="filter-toggle__count">{activeFilterCount}</span>
-            )}
-          </button>
         </div>
       </div>
+
+      <FilterBar
+        mode="movies"
+        filters={filters}
+        onChange={setPartial}
+        onReset={resetFilters}
+        activeFilterCount={activeFilterCount}
+      />
 
       <p className="results-meta">
         <strong>{sorted.length}</strong>{' '}

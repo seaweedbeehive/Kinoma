@@ -3,7 +3,7 @@ import { useQueries } from '@tanstack/react-query';
 import { useLayout } from '../../components/Layout/useLayout';
 import { AggregatedShowtimeCard } from '../../components/ShowtimeCard';
 import { ShowtimeListSkeleton } from '../../components/Skeleton';
-import { FilterPanel } from '../../components/FilterPanel';
+import { FilterBar } from '../../components/FilterBar';
 import { DateScroller } from '../../components/DateScroller';
 import { ViewToggle } from '../../components/ViewToggle';
 import { MovieQuickViewModal } from '../../components/MovieQuickViewModal';
@@ -272,7 +272,7 @@ function ActiveFilterChips({
 }
 
 export function ShowtimesPage() {
-  const { setSidebar, openMobileFilter, closeMobileFilter } = useLayout();
+  const { setSidebar } = useLayout();
   const { data: cinemas, isLoading: cinemasLoading } = useCinemas();
   const { favorites } = useFavorites();
   const { filters, setPartial, resetFilters, activeFilterCount } = useFilterState();
@@ -348,16 +348,8 @@ export function ShowtimesPage() {
   );
 
   useEffect(() => {
-    setSidebar(
-      <FilterPanel
-        filters={filters}
-        onChange={setPartial}
-        onApply={closeMobileFilter}
-        onReset={resetFilters}
-      />
-    );
-    return () => setSidebar(null);
-  }, [setSidebar, filters, setPartial, closeMobileFilter, resetFilters]);
+    setSidebar(null);
+  }, [setSidebar]);
 
   const failedChunks = useMemo(
     () => chunkQueries.filter((q) => q.isError).length,
@@ -410,19 +402,16 @@ export function ShowtimesPage() {
             value={filters.viewMode}
             onChange={(view) => setPartial({ viewMode: view })}
           />
-          <button
-            type="button"
-            className="filter-toggle filter-toggle--inline"
-            onClick={openMobileFilter}
-            aria-label="Filter öffnen"
-          >
-            Filter
-            {activeFilterCount > 0 && (
-              <span className="filter-toggle__count">{activeFilterCount}</span>
-            )}
-          </button>
         </div>
       </div>
+
+      <FilterBar
+        mode="showtimes"
+        filters={filters}
+        onChange={setPartial}
+        onReset={resetFilters}
+        activeFilterCount={activeFilterCount}
+      />
 
       <DateScroller
         selectedDate={selectedDate}

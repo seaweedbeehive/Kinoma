@@ -6,11 +6,13 @@ import {
 } from 'react-router-dom';
 import { useQueries } from '@tanstack/react-query';
 import { useMovie } from '../../hooks/useMovie';
+import { useMovieSynopsis } from '../../hooks/useMovieSynopsis';
 import { useCinemas } from '../../hooks/useCinemas';
 import { useFavorites } from '../../hooks/useFavorites';
 import { getShows } from '../../api/endpoints';
 import { DateScroller } from '../../components/DateScroller';
 import { ShowtimeCard } from '../../components/ShowtimeCard';
+import { CollapsibleFilterGroup } from '../../components/CollapsibleFilterGroup';
 import { Modal } from '../../components/Modal';
 import { ErrorState } from '../../components/ErrorState';
 import { parseLanguageFlags } from '../../utils/flags';
@@ -49,6 +51,23 @@ const CalendarIcon = () => (
   </svg>
 );
 
+const ChevronIcon = ({ expanded }: { expanded?: boolean }) => (
+  <svg
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={`movie-cast__chevron${expanded ? ' is-open' : ''}`}
+    aria-hidden="true"
+  >
+    <polyline points="6 9 12 15 18 9" />
+  </svg>
+);
+
 function formatDateKey(date: Date): string {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, '0');
@@ -63,6 +82,29 @@ function formatDuration(minutes?: number): string | null {
   if (h > 0 && m > 0) return `${h}h ${m}min`;
   if (h > 0) return `${h}h`;
   return `${m}min`;
+}
+
+function dedupeShows(shows: Show[]): Show[] {
+  const seenIds = new Set<string>();
+  const seenKeys = new Set<string>();
+  return shows.filter((show) => {
+    if (show.id) {
+      if (seenIds.has(show.id)) return false;
+      seenIds.add(show.id);
+    }
+    const key = [
+      show.beginning?.timestamp,
+      show.auditorium?.name,
+      show.flags
+        .map((flag) => flag.name)
+        .sort()
+        .join('|'),
+      show.isSoldOut,
+    ].join('::');
+    if (seenKeys.has(key)) return false;
+    seenKeys.add(key);
+    return true;
+  });
 }
 
 function getHeroImage(movie: NonNullable<ReturnType<typeof useMovie>['data']>): string {
@@ -108,10 +150,12 @@ interface CinemaSectionProps {
 }
 
 function CinemaSection({ cinema, shows }: CinemaSectionProps) {
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(false);
 
   return (
-    <section className="cinema-section">
+    <section
+      className={`cinema-section${expanded ? '' : ' cinema-section--collapsed'}`}
+    >
       <button
         type="button"
         className="cinema-section__header"
@@ -152,10 +196,44 @@ function CinemaSection({ cinema, shows }: CinemaSectionProps) {
   );
 }
 
+interface CastCrewSectionProps {
+  directors: string;
+  actors: string;
+}
+
+function CastCrewSection({ directors, actors }: CastCrewSectionProps) {
+  const [expanded, setExpanded] = useState(false);
+
+  if (!directors && !actors) return null;
+
+  return (
+    <section className={`movie-cast${expanded ? ' is-expanded' : ''}`}>
+      <button
+        type="button"
+        className="movie-cast__toggle"
+        onClick={() => setExpanded((prev) => !prev)}
+        aria-expanded={expanded}
+      >
+        <span>Besetzung & Crew</span>
+        <ChevronIcon expanded={expanded} />
+      </button>
+      <div className="movie-cast__content">
+        <div className="movie-cast__inner">
+          {directors && (
+            <p className="movie-hero__directors">Regie: {directors}</p>
+          )}
+          {actors && <p className="movie-hero__actors">Mit: {actors}</p>}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export function MovieDetailPage() {
   const { movieId } = useParams<{ movieId: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: movie, isLoading, error } = useMovie(movieId || '');
+  const { data: synopsis } = useMovieSynopsis(movie);
   const { data: cinemas } = useCinemas();
   const { isFavorite, toggleFavorite } = useFavorites();
 
@@ -188,8 +266,10 @@ export function MovieDetailPage() {
     return cinemas
       .map((cinema, index) => {
         const result = showQueries[index];
-        const shows = (result.data || []).filter((show) =>
-          showMatchesLanguage(show, activeLanguages)
+        const shows = dedupeShows(
+          (result.data || []).filter((show) =>
+            showMatchesLanguage(show, activeLanguages)
+          )
         );
         return { cinema, shows };
       })
@@ -264,10 +344,6 @@ export function MovieDetailPage() {
             {genres && <span>{genres}</span>}
           </div>
           <h1 className="movie-hero__title">{movie.title}</h1>
-          {directors && (
-            <p className="movie-hero__directors">Regie: {directors}</p>
-          )}
-          {actors && <p className="movie-hero__actors">Mit: {actors}</p>}
 
           {typeof movie.imdbRating === 'number' && (
             <div className="movie-hero__imdb">
@@ -281,6 +357,23 @@ export function MovieDetailPage() {
             </div>
           )}
 
+          {synopsis?.text && (
+            <section className="movie-description">
+              <div className="movie-description__header">
+                <h2>Handlung</h2>
+                <span className={`movie-description__source movie-description__source--${synopsis.source}`}>
+                  {synopsis.source === 'kinova' && 'Kinova'}
+                  {synopsis.source === 'tmdb-de' && 'TMDB (DE)'}
+                  {synopsis.source === 'tmdb-en' && 'TMDB (EN)'}
+                  {synopsis.source === 'tmdb-en-llm' && 'TMDB + KI'}
+                </span>
+              </div>
+              <p>{synopsis.text}</p>
+            </section>
+          )}
+
+          <CastCrewSection directors={directors} actors={actors} />
+
           <div className="movie-hero__actions">
             <button
               type="button"
@@ -293,13 +386,6 @@ export function MovieDetailPage() {
           </div>
         </div>
       </div>
-
-      {movie.description && (
-        <section className="movie-description">
-          <h2>Handlung</h2>
-          <p>{movie.description}</p>
-        </section>
-      )}
 
       <section className="showtimes-section">
         <div className="showtimes-section__header">
@@ -315,8 +401,11 @@ export function MovieDetailPage() {
           days={7}
         />
 
-        <div className="language-filter-bar">
-          <span className="language-filter-bar__label">Sprache:</span>
+        <CollapsibleFilterGroup
+          title="Sprache:"
+          variant="row"
+          activeCount={activeLanguages.length}
+        >
           {['OV', 'OmU', 'OmeU', 'Subtitled', 'Dubbed'].map((lang) => {
             const active = activeLanguages.includes(lang.toUpperCase());
             return (
@@ -330,7 +419,7 @@ export function MovieDetailPage() {
               </button>
             );
           })}
-        </div>
+        </CollapsibleFilterGroup>
 
         {cinemaShows.length === 0 ? (
           <div className="empty-state">

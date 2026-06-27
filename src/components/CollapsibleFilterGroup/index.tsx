@@ -1,0 +1,1 @@
+export { CollapsibleFilterGroup } from './CollapsibleFilterGroup';

@@ -4,6 +4,7 @@ import { useQueries } from '@tanstack/react-query';
 import { Modal } from '../Modal';
 import { DateScroller } from '../DateScroller';
 import { ShowtimeCard } from '../ShowtimeCard';
+import { CollapsibleFilterGroup } from '../CollapsibleFilterGroup';
 import { useMovie } from '../../hooks/useMovie';
 import { useCinemas } from '../../hooks/useCinemas';
 import { useFavorites } from '../../hooks/useFavorites';
@@ -245,8 +246,11 @@ export function MovieQuickViewModal({
                 days={7}
               />
 
-              <div className="language-filter-bar">
-                <span className="language-filter-bar__label">Sprache:</span>
+              <CollapsibleFilterGroup
+                title="Sprache:"
+                variant="row"
+                activeCount={activeLanguages.length}
+              >
                 {['OV', 'OmU', 'OmeU', 'Subtitled', 'Dubbed'].map((lang) => {
                   const active = activeLanguages.includes(lang.toUpperCase());
                   return (
@@ -260,7 +264,7 @@ export function MovieQuickViewModal({
                     </button>
                   );
                 })}
-              </div>
+              </CollapsibleFilterGroup>
 
               {cinemaShows.length === 0 ? (
                 <div className="empty-state empty-state--compact">

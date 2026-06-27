@@ -384,6 +384,28 @@ body:has(.mobile-drawer.is-open) {
   padding-inline: 22px;
 }
 
+@media (max-width: 767px) {
+  .mobile-filter-panel {
+    top: auto;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    max-width: none;
+    height: 85vh;
+    max-height: 720px;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    border-right: 0;
+    border-top: 1px solid var(--border);
+    transform: translateY(100%);
+    padding-bottom: env(safe-area-inset-bottom, 16px);
+  }
+
+  .mobile-filter-panel.is-open {
+    transform: translateY(0);
+  }
+}
+
 /* View toggle */
 .view-toggle {
   display: inline-flex;
@@ -700,6 +722,145 @@ body:has(.mobile-drawer.is-open) {
   margin-top: 4px;
 }
 
+/* Filter bar */
+.filter-bar {
+  position: sticky;
+  top: var(--header-height);
+  z-index: 90;
+  margin-bottom: 22px;
+  padding: 12px 0;
+  background: var(--bg);
+  border-bottom: 1px solid transparent;
+  transition: border-color var(--transition);
+}
+
+.filter-bar__desktop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.filter-bar__mobile-toggle {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background var(--transition), border-color var(--transition);
+}
+
+.filter-bar__mobile-toggle:hover {
+  background: var(--surface-hover);
+  border-color: var(--accent);
+}
+
+.filter-bar__mobile-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+/* Filter dropdown */
+.filter-dropdown {
+  position: relative;
+}
+
+.filter-dropdown__trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 8px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+  font: inherit;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background var(--transition), border-color var(--transition), color var(--transition);
+}
+
+.filter-dropdown__trigger:hover {
+  background: var(--surface-hover);
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.filter-dropdown__trigger.is-open {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.filter-dropdown__trigger.has-active {
+  border-color: var(--accent);
+  color: #ff5a65;
+}
+
+.filter-dropdown__count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.filter-dropdown__chevron {
+  transition: transform var(--transition);
+}
+
+.filter-dropdown__trigger.is-open .filter-dropdown__chevron {
+  transform: rotate(180deg);
+}
+
+.filter-dropdown__panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 50;
+  min-width: 260px;
+  max-width: min(90vw, 360px);
+  max-height: 60vh;
+  overflow-y: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  padding: 16px;
+}
+
+.filter-dropdown__content .search-input,
+.filter-dropdown__content .time-range input[type="time"] {
+  background: var(--bg);
+}
+
+.filter-dropdown__content .checkbox-list {
+  max-height: 45vh;
+  overflow-y: auto;
+}
+
 /* Movie card */
 .movie-card {
   position: relative;
@@ -901,8 +1062,8 @@ body:has(.mobile-drawer.is-open) {
 /* Results grid */
 .results-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 24px;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 20px;
 }
 
 .results-grid.is-list {
@@ -921,12 +1082,54 @@ body:has(.mobile-drawer.is-open) {
   .content-bar__controls {
     justify-content: flex-end;
   }
+
+  .filter-bar__desktop {
+    display: none;
+  }
+
+  .filter-bar__mobile-toggle {
+    display: inline-flex;
+  }
+
+  .filter-dropdown__panel {
+    position: fixed;
+    top: auto;
+    left: 16px;
+    right: 16px;
+    max-width: none;
+    max-height: 50vh;
+  }
+}
+
+@media (min-width: 1024px) {
+  .results-grid {
+    gap: 24px;
+  }
 }
 
 @media (max-width: 767px) {
   .results-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
+
+  .results-grid.is-list {
     grid-template-columns: 1fr;
-    gap: 16px;
+  }
+
+  .movie-card--grid .movie-card__genres,
+  .movie-card--grid .movie-card__imdb,
+  .movie-card--grid .movie-card__votes {
+    display: none;
+  }
+
+  .movie-card--grid .movie-card__content {
+    padding: 12px;
+    gap: 4px;
+  }
+
+  .movie-card--grid .movie-card__title {
+    font-size: 0.9rem;
   }
 
   .movie-card--list .movie-card__media {
@@ -1042,17 +1245,114 @@ body:has(.mobile-drawer.is-open) {
   padding: 24px;
 }
 
+.movie-description__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
 .movie-description h2 {
-  margin: 0 0 12px;
+  margin: 0;
   font-size: 1.25rem;
   font-weight: 700;
   color: var(--text);
+}
+
+.movie-description__source {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+}
+
+.movie-description__source--tmdb-de {
+  color: var(--green);
+  border-color: rgba(34, 197, 94, 0.35);
+}
+
+.movie-description__source--tmdb-en-llm {
+  color: var(--blue);
+  border-color: rgba(59, 130, 246, 0.35);
 }
 
 .movie-description p {
   margin: 0;
   color: var(--text-muted);
   line-height: 1.65;
+}
+
+.movie-hero__content .movie-description {
+  margin-top: 4px;
+  background: transparent;
+  border: 0;
+  padding: 0;
+}
+
+.movie-hero__content .movie-description h2 {
+  font-size: 1rem;
+  margin-bottom: 8px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Cast / crew collapsible */
+.movie-cast {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.movie-cast__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: color var(--transition);
+}
+
+.movie-cast__toggle:hover {
+  color: var(--text);
+}
+
+.movie-cast__chevron {
+  transition: transform var(--transition);
+}
+
+.movie-cast.is-expanded .movie-cast__chevron {
+  transform: rotate(180deg);
+}
+
+.movie-cast__content {
+  display: grid;
+  grid-template-rows: 0fr;
+  min-width: 0;
+  transition: grid-template-rows var(--transition);
+}
+
+.movie-cast.is-expanded .movie-cast__content {
+  grid-template-rows: 1fr;
+}
+
+.movie-cast__inner {
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 /* Showtimes section */
@@ -1093,12 +1393,93 @@ body:has(.mobile-drawer.is-open) {
   font-weight: 600;
 }
 
+/* Collapsible filter groups */
+.collapsible-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.collapsible-filter--row {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.collapsible-filter__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: color var(--transition);
+}
+
+.collapsible-filter__toggle:hover {
+  color: var(--text);
+}
+
+.collapsible-filter__title {
+  color: inherit;
+}
+
+.collapsible-filter__chevron {
+  transition: transform var(--transition);
+}
+
+.collapsible-filter__chevron.is-open {
+  transform: rotate(180deg);
+}
+
+.collapsible-filter__content {
+  display: grid;
+  grid-template-rows: 0fr;
+  min-width: 0;
+  transition: grid-template-rows var(--transition);
+}
+
+.collapsible-filter--row .collapsible-filter__content {
+  flex: 1 1 0%;
+  min-width: 0;
+}
+
+.collapsible-filter.is-expanded .collapsible-filter__content {
+  grid-template-rows: 1fr;
+}
+
+.collapsible-filter__inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.collapsible-filter--row .collapsible-filter__inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
 /* Cinema section */
 .cinema-section {
+  display: flex;
+  flex-direction: column;
+  min-height: 120px;
+  flex-shrink: 0;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   overflow: hidden;
+}
+
+.cinema-section--collapsed {
+  min-height: 0;
 }
 
 .cinema-section__header {
@@ -1435,12 +1816,24 @@ body:has(.mobile-drawer.is-open) {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
-  max-height: 360px;
+  max-height: min(60vh, 560px);
   overflow-y: auto;
   padding-right: var(--spacing-sm);
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.cinema-showtimes::-webkit-scrollbar {
+  width: 6px;
+}
+
+.cinema-showtimes::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 999px;
 }
 
 .cinema-showtimes--in-modal {
+  max-height: 320px;
   margin-top: var(--spacing-md);
 }
 
@@ -1947,6 +2340,25 @@ body:has(.mobile-drawer.is-open) {
 
 .active-filters__clear:hover {
   text-decoration: underline;
+}
+
+@media (max-width: 767px) {
+  .active-filters {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding-bottom: 4px;
+  }
+
+  .active-filters::-webkit-scrollbar {
+    display: none;
+  }
+
+  .active-filter-chip,
+  .active-filters__clear {
+    flex-shrink: 0;
+  }
 }
 
 /* Date scroller */

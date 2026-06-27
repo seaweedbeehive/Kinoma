@@ -1,5 +1,6 @@
 import { useGenres } from '../../hooks/useGenres';
 import type { FilterState, LanguageFilters } from '../../hooks/useFilterState';
+import { CollapsibleFilterGroup } from '../CollapsibleFilterGroup';
 
 type FilterPanelMode = 'movies' | 'showtimes';
 
@@ -53,26 +54,17 @@ export function FilterPanel({
     onReset?.();
   };
 
+  const activeLanguageCount = Object.values(filters.languages).filter(Boolean).length;
+  const activeTimeCount = Number(Boolean(filters.timeFrom)) + Number(Boolean(filters.timeTo));
+
   return (
     <form className="filters" autoComplete="off" onSubmit={(e) => e.preventDefault()}>
-      <fieldset className="filter-group">
-        <legend className="filter-group__title">Suche</legend>
-        <label htmlFor="filterSearch" className="sr-only">
-          Suche
-        </label>
-        <input
-          id="filterSearch"
-          type="search"
-          className="search-input"
-          placeholder="Film, Kino…"
-          value={filters.search}
-          onChange={(e) => update('search', e.target.value)}
-        />
-      </fieldset>
-
       {mode === 'showtimes' && (
-        <fieldset className="filter-group">
-          <legend className="filter-group__title">Sprache / Untertitel</legend>
+        <CollapsibleFilterGroup
+          title="Sprache / Untertitel"
+          activeCount={activeLanguageCount}
+          defaultExpanded
+        >
           <div className="checkbox-list">
             {LANGUAGE_OPTIONS.map(({ key, label }) => (
               <label key={key} className="filter-option">
@@ -85,12 +77,11 @@ export function FilterPanel({
               </label>
             ))}
           </div>
-        </fieldset>
+        </CollapsibleFilterGroup>
       )}
 
       {mode === 'showtimes' && (
-        <fieldset className="filter-group">
-          <legend className="filter-group__title">Zeit</legend>
+        <CollapsibleFilterGroup title="Zeit" activeCount={activeTimeCount} defaultExpanded>
           <div className="time-range">
             <label className="sr-only" htmlFor="timeFrom">
               Von
@@ -112,11 +103,14 @@ export function FilterPanel({
               onChange={(e) => update('timeTo', e.target.value)}
             />
           </div>
-        </fieldset>
+        </CollapsibleFilterGroup>
       )}
 
-      <fieldset className="filter-group">
-        <legend className="filter-group__title">Genre</legend>
+      <CollapsibleFilterGroup
+        title="Genre"
+        activeCount={filters.selectedGenres.length}
+        defaultExpanded
+      >
         {isLoading && <p className="filter-hint">Lade Genres…</p>}
         <div className="checkbox-list">
           {(genres || []).map((genre) => (
@@ -130,11 +124,14 @@ export function FilterPanel({
             </label>
           ))}
         </div>
-      </fieldset>
+      </CollapsibleFilterGroup>
 
       {mode === 'showtimes' && (
-        <fieldset className="filter-group">
-          <legend className="filter-group__title">Format</legend>
+        <CollapsibleFilterGroup
+          title="Format"
+          activeCount={filters.threeDOnly ? 1 : 0}
+          defaultExpanded
+        >
           <div className="checkbox-list">
             <label className="filter-option">
               <input
@@ -145,12 +142,15 @@ export function FilterPanel({
               <span className="filter-option__text">Nur 3D</span>
             </label>
           </div>
-        </fieldset>
+        </CollapsibleFilterGroup>
       )}
 
       {mode === 'showtimes' && (
-        <fieldset className="filter-group">
-          <legend className="filter-group__title">Kino</legend>
+        <CollapsibleFilterGroup
+          title="Kino"
+          activeCount={filters.favoritesOnly ? 1 : 0}
+          defaultExpanded
+        >
           <div className="checkbox-list">
             <label className="filter-option">
               <input
@@ -161,12 +161,15 @@ export function FilterPanel({
               <span className="filter-option__text">Nur Favoriten-Kinos</span>
             </label>
           </div>
-        </fieldset>
+        </CollapsibleFilterGroup>
       )}
 
       {mode === 'showtimes' && (
-        <fieldset className="filter-group">
-          <legend className="filter-group__title">Verfügbarkeit</legend>
+        <CollapsibleFilterGroup
+          title="Verfügbarkeit"
+          activeCount={filters.hideSoldOut ? 1 : 0}
+          defaultExpanded
+        >
           <div className="checkbox-list">
             <label className="filter-option">
               <input
@@ -177,7 +180,7 @@ export function FilterPanel({
               <span className="filter-option__text">Ausverkaufte ausblenden</span>
             </label>
           </div>
-        </fieldset>
+        </CollapsibleFilterGroup>
       )}
 
       <div className="filter-actions">

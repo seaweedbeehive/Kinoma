@@ -52,6 +52,32 @@ VITE_KINOVA_API_URL=http://localhost:8001/api/v1
 
 Change the port if your Kinova instance runs on a different one.
 
+#### Optional: TMDB API key for trending movies
+
+To enable the **Beliebtheit (TMDB)** sort option on the Movies page, add a TMDB API key:
+
+```env
+VITE_TMDB_API_KEY=your_tmdb_api_key
+```
+
+Get a free key at [themoviedb.org/settings/api](https://www.themoviedb.org/settings/api) (sign up → Account Settings → API → Request an API key). The app works without it; trending sort simply falls back to rating order when the key is absent.
+
+#### Optional: TMDB + LLM for German film synopses
+
+Film synopses on the Movie detail page are fetched from multiple sources in this priority order:
+
+1. **TMDB German overview** — fetched directly from TMDB when `VITE_TMDB_API_KEY` is set and a German overview exists.
+2. **TMDB English overview translated to German** — if no German overview is available, the English overview is translated using an LLM. Provide one of the following keys:
+   ```env
+   VITE_OPENAI_API_KEY=your_openai_api_key
+   # or
+   VITE_ANTHROPIC_API_KEY=your_anthropic_api_key
+   ```
+3. **TMDB English overview** — shown untranslated if no LLM key is configured.
+4. **Kinova description** — the original `description` field from the Kinova API, used as a fallback when TMDB is unavailable or returns no match.
+
+Results are cached by TanStack Query for 24 hours. The detail page shows a small source badge (e.g., "TMDB (DE)" or "TMDB + KI") next to the synopsis.
+
 ### 4. Start the development server
 
 ```bash
